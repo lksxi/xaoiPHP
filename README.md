@@ -1,4 +1,8 @@
 # xaoi
 ss3
-<h1 style="color:red">sfef</h1>
+<style>
+.xx{color:red;}
+</style>
+<div class="xx"></div>
+
  mini-php-框架
