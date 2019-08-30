@@ -22,6 +22,35 @@ project			根目录
 ├─index.php		入口文件
 ```
 
+## 数据库例子
+### 方式1
+```
+	//查询
+	db('user')->get();				//查询所有记录
+	db('user')->get(10);				//查询10条记录
+	db('user')->get(['id'=>1],'id,name,pwd');	//查询条件为id=1，字段id,name,pwd的记录
+	//添加
+	db('user')->add(['name'=>'xaoi','pwd'=>'123456']);
+	//修改
+	db('user')->set(['id'=>1],['name'=>'xaoi','pwd'=>'12345678']);
+	//删除
+	db('user')->del(['id'=>1]);
+```
+### 方式2
+```
+	$user = db('user');
+	//查询
+	$user->get();				//查询所有记录
+	$user->get(10);				//查询10条记录
+	$user->get(['id'=>1],'id,name,pwd');	//查询条件为id=1，字段id,name,pwd的记录
+	//添加
+	$user->add(['name'=>'xaoi','pwd'=>'123456']);
+	//修改
+	$user->set(['id'=>1],['name'=>'xaoi','pwd'=>'12345678']);
+	//删除
+	$user->del(['id'=>1]);
+```
+
 ## 使用
 
 ### 1.修改数据库配置
