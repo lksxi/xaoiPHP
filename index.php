@@ -18,7 +18,7 @@ function C($k){
 	static $_conf = array(
 		'xaoi'	=> array(
 			'tpl'		=> array(
-				'cache'		=> 'runtime/cache/tpl'
+				'cache'		=> 'runtime/cache/tpl'	//编译的模板目录
 			),
 			'database'	=> array(
 				'default' => [
@@ -34,21 +34,20 @@ function C($k){
 				'sqlite'
 					=> array(
 					'sqlite'	=> array(
-						'file'		=> '/db/.xaoi.db',
+						'file'		=> 'db/.xaoi.db',
 						'prefix'    => ''
 					)
 				),
 			),
 			'sys'	=> array(
-				'cookie'	=> 'LHZtpVJApBMx4EJeevn6GBhZLzvuOkVA',
+				//ajax域名列表
 				'host'	=> array(
 					'127.0.0.1',
 					'localhost',
 				),
 				'name'	=> array(
-					'controller'	=> 'code',
-					'model'			=> 'model',
-					'view'			=> 'view'
+					'controller'	=> 'code',	//控制器目录名
+					'view'			=> 'view'	//模板目录名
 				),
 				'route'	=> array(
 					'url'	=> array(
@@ -59,7 +58,8 @@ function C($k){
 					),
 					'is_default'	=> true,
 					'access'	=> array('home','admin','mobile','weixin'),		// 允许访问的模块
-					'deny'		=> array('common','runtime'),	// 拒绝访问的模块
+					'deny'		=> array('common','runtime'),					// 拒绝访问的模块
+					//默认模块名、控制器名、方法名
 					'default_name'	=> array(
 						'module'		=> 'home',
 						'controller'	=> 'index',
