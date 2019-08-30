@@ -53,13 +53,13 @@ function C($k){
 				'route'	=> array(
 					'url'	=> array(
 						'type'	=> 2,		// 0、普通模式	1、PATH_INFO	2、REWRITE
-						'info'	=> 'r',		//普通模式时的get变量名
-						'space'	=> '/',		//分隔符
-						'suffix'=> '.html'	//后缀
+						'info'	=> 'r',		// 普通模式时的get变量名
+						'space'	=> '/',		// 分隔符
+						'suffix'=> '.html'	// 后缀
 					),
 					'is_default'	=> true,
-					'access'	=> array('home','admin','mobile','weixin'),		//允许访问的模块
-					'deny'		=> array('common','runtime'),	//拒绝访问的模块
+					'access'	=> array('home','admin','mobile','weixin'),		// 允许访问的模块
+					'deny'		=> array('common','runtime'),	// 拒绝访问的模块
 					'default_name'	=> array(
 						'module'		=> 'home',
 						'controller'	=> 'index',
@@ -114,14 +114,14 @@ function C($k){
 	return $p;
 }
 
-//常用函数
-	//快速实例化模板
+// 常用函数
+	// 快速实例化模板
 	function _tpl($d = null,$f = ''){
 		$t = new Tpl($d);
 		$t->display($f);
 	}
 
-	//获取数据库选择函数或表对象
+	// 获取数据库选择函数或表对象
 	function db(){
 		switch(func_num_args()){
 			case 0:
@@ -156,7 +156,7 @@ function C($k){
 		return empty($r_tab)?Db::$_fn[$id]:Db::$_fn[$id]($r_tab);
 	}
 
-	//调试输出
+	// 调试输出
 	function P($var){
 		if(php_sapi_name() === 'cli'){
 			echo "\n";
@@ -174,13 +174,13 @@ function C($k){
 		}
 	}
 
-	//调试输出并退出
+	// 调试输出并退出
 	function _P($var){
 		P($var);
 		exit;
 	}
 
-	//错误输出
+	// 错误输出
 	function E($ts1,$ts2 = ''){
 		if(APP_DEBUG){
 			$ts = $ts1;
@@ -203,20 +203,20 @@ function C($k){
 		}
 	}
 
-	//错误输出并退出
+	// 错误输出并退出
 	function _E($var){
 		E($var);
 		exit;
 	}
 
-	//退出提示并跳转-需要自定义
+	// 退出提示并跳转-需要自定义
 	function _exit($s,$u=false){
 		header("Content-type: text/html; charset=utf-8");
 		if($u !== false)header('refresh:3;url='.(empty($u)?U('/'):$u));
 		exit('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><div style="font-size:24px;">'.$s.'</div>');
 	}
 
-	//获取并过滤变量
+	// 获取并过滤变量
 	function I($_p){
 		if(is_array($_p)){
 			foreach($_p as &$v){
@@ -310,7 +310,7 @@ function C($k){
 		return $_p;
 	}
 
-	//获取url地址
+	// 获取url地址
 	function U($url = '',$vars='',$suffix=true){
 		$c = array('m'=>MODULE,'c'=>CONTROLLER,'a'=>ACTION);
 		$info   =  parse_url($url);
@@ -341,7 +341,7 @@ function C($k){
 		}
 		if($url){
 			$r='';
-			if(isset($host))$r=(is_ssl()?'https://':'http://').(empty($host)?$_SERVER["HTTP_HOST"]:$host);
+			if(isset($host))$r=(is_ssl()?'https:// ':'http:// ').(empty($host)?$_SERVER["HTTP_HOST"]:$host);
 			$root = __ROOT__;
 			if(!empty($root))$r .= $root;
 			$filename = substr($_SERVER['SCRIPT_NAME'],strrpos($_SERVER['SCRIPT_NAME'] ,'/')+1);
@@ -403,7 +403,7 @@ function C($k){
 		}
 	}
 
-	//输出到浏览器-U函数
+	// 输出到浏览器-U函数
 	function _U(){
 		return '<script src="'.__ROOT__.'/public/static/lib/u.js">'.json(array(
 				'__root__'=>__ROOT__,
@@ -419,7 +419,7 @@ function C($k){
 			)).'</script>';
 	}
 
-	//设置cookie
+	// 设置cookie
 	function cookie(){
 		switch(func_num_args()){
 			case 0:
@@ -479,7 +479,7 @@ function C($k){
 		}
 	}
 
-	//设置session
+	// 设置session
 	function session(){
 		if(empty($_SESSION)){
 			session_start();
@@ -533,7 +533,7 @@ function C($k){
 		}
 	}
 	
-	//获取或修改文件
+	// 获取或修改文件
 	function F()
 	{
 		switch(func_num_args()){
@@ -553,24 +553,24 @@ function C($k){
 		}
 	}
 
-	//json编码
+	// json编码
 	function json($d,$is_obj = false){
 		return json_encode($d,$is_obj?JSON_FORCE_OBJECT|JSON_UNESCAPED_UNICODE:JSON_UNESCAPED_UNICODE);
 	}
 
-	//json编码-输出-退出
+	// json编码-输出-退出
 	function _json($d){
 		exit(json($d));
 	}
 
-	//是否ajax访问
+	// 是否ajax访问
 	function is_ajax($is = false){
 		if(is_referer($is) && !empty($_SERVER['HTTP_AJAX']) && $_SERVER['HTTP_AJAX'] === 'XAOI')return true;
 		if($is)exit;
 		return false;
 	}
 
-	//是否指定域名访问
+	// 是否指定域名访问
 	function is_referer($is = false){
 		if(!empty($_SERVER['HTTP_REFERER'])){
 			$url = parse_url($_SERVER['HTTP_REFERER']);
@@ -580,7 +580,7 @@ function C($k){
 		return false;
 	}
 
-	//获取url数据-file_get_contents
+	// 获取url数据-file_get_contents
 	function post($url,$data=' ',$cookie = ''){
 		if(is_array($data)){
 			$data = http_build_query($data);
@@ -601,7 +601,7 @@ function C($k){
 			'content'=>$data))));
 	}
 
-	//获取url数据-curl
+	// 获取url数据-curl
 	function _post($url, $data = array(),$cookie = ''){	
 		if(is_array($cookie)){
 			foreach($cookie as $k => &$v){
@@ -629,12 +629,12 @@ function C($k){
 		return $r;
 	}
 
-	//获取url数据-fsockopen-可异步
+	// 获取url数据-fsockopen-可异步
 	function _fsockopen($url,$post = array(),$exit = false,$referer = ''){
 		$par = parse_url($url);
 		if($par['scheme'] === 'http' || $par['scheme'] === 'https'){
 			if( $par['scheme'] === 'https'){
-				$ssl = 'ssl://';
+				$ssl = 'ssl:// ';
 				if(!isset($par['port']))$par['port'] = 443;
 			}else{
 				$ssl = '';
@@ -688,7 +688,7 @@ function C($k){
 		}
 	}
 
-	//批量获取url数据
+	// 批量获取url数据
 	function posts($arr,$fn = null){
 		$chs = array();
 		foreach($arr as $url => &$v){
@@ -742,7 +742,7 @@ function C($k){
 		return $arr;
 	}
 
-	//获取当前模块下对象
+	// 获取当前模块下对象
 	function _new($c,$s = null){
 		if(strpos($c,':') === false){
 			$class = '\\'.str_replace('/','\\',$c);
@@ -753,7 +753,7 @@ function C($k){
 		return is_null($s)?new $class():new $class($s);
 	}
 
-	//是否https访问
+	// 是否https访问
 	function is_ssl() {
 		if(isset($_SERVER['HTTPS']) && ('1' == $_SERVER['HTTPS'] || 'on' == strtolower($_SERVER['HTTPS']))){
 			return true;
@@ -763,12 +763,12 @@ function C($k){
 		return false;
 	}
 
-	//是否手机访问
+	// 是否手机访问
 	function ismobile(){
 		if (isset ($_SERVER['HTTP_X_WAP_PROFILE'])) return true; if(isset ($_SERVER['HTTP_CLIENT']) &&'PhoneClient'==$_SERVER['HTTP_CLIENT']) return true; if (isset ($_SERVER['HTTP_VIA'])) return stristr($_SERVER['HTTP_VIA'], 'wap') ? true : false; if (isset ($_SERVER['HTTP_USER_AGENT'])) { $clientkeywords = array( 'nokia','sony','ericsson','mot','samsung','htc','sgh','lg','sharp','sie-','philips','panasonic','alcatel','lenovo','iphone','ipod','blackberry','meizu','android','netfront','symbian','ucweb','windowsce','palm','operamini','operamobi','openwave','nexusone','cldc','midp','wap','mobile' ); if (preg_match("/(" . implode('|', $clientkeywords) . ")/i", strtolower($_SERVER['HTTP_USER_AGENT']))) { return true; } } if (isset ($_SERVER['HTTP_ACCEPT'])) { if ((strpos($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml') !== false) && (strpos($_SERVER['HTTP_ACCEPT'], 'text/html') === false || (strpos($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml') < strpos($_SERVER['HTTP_ACCEPT'], 'text/html')))) { return true; } } return false;
 	}
 
-	//url-base64
+	// url-base64
 	function url_base64_encode($string) {
 		$data = base64_encode($string);
 		$data = str_replace(array('+','/','='),array('-','_',''),$data);
@@ -828,10 +828,10 @@ final class Xaoi{
 
 		define('__STATIC__',__ROOT__.'/public/static');
 		
-		//初始化目录		
+		// 初始化目录		
 		if(APP_DEBUG)self::create_dir();
 
-		//组装
+		// 组装
 		$class = '\\'.MODULE.'\\'.C('xaoi.sys.name.controller').'\\'.CONTROLLER;
 		if(class_exists($class))$o = new $class(); else _E('找不到控制器:'.CONTROLLER);
 		if(!method_exists($o,ACTION))_E('没有在 "'.CONTROLLER.'" 找到 "'.ACTION.'" 方法');
@@ -946,7 +946,7 @@ final class Xaoi{
 		$index = _APP_.'/'.C('xaoi.sys.route.default_name.module').'/'.C('xaoi.sys.name.controller').'/index.php';
 		if(!is_file($index)){
 			$tmp = tempnam(__DIR__,'tmp');
-			F($tmp,gzuncompress(base64_decode('eNoL8GZmEWEAgdqGxz4MSIAFiBMLCvQD4Cra0VRwQlVk5OemIilDN4gPWVlyfgpCLQfDbKDawucuD4uAvBIgFsdQm5mXklqhV5BRoHtqI2eLgYTDQ7sJspdmluzc/YiFVXwj50dx5lksixQ61iZ36C2cuqOnI3nFC237OImbZ5KWuDKe4+JUMWY9cklFIEGl+KFMoFXjroMdMUunTltq9MvxVF7d5iurWwOPW+Wf3tB/957/l9P2dv8/y3+O+DBH1+0tJ24vsQNxQWlSTmYyAX9DFRWXJJbgVSuEoTYnMwkpnMqLp/vM2KE6YRqQV8XIwCCBVX1JQY5eVvHagN18hwx4/ohe0ZwWULEmlD0iQusjYyjbZBbTII/VVwSdMv/NFVnVZ3Cg6PDc9zn3V9rJ85ua+91aUFLK6zfppYxzR4SifFV2h+hsJq+sswdWbuc1i1Y0ehe3Q7xJdx23y9WTBZf7ftyVvjTT87Vrm8c/wb3LHtzNurdmQoFMspeQ57bKumvGkyVqvu87/9M2sepFvWWw4fxLClP9Uf2isezjox1MDAyzWBkYxLD6pRTkkxDf4tkGAn+120qsViTcfJKRpm5bZpVb7FGstM49ITH5c6rnjZcM//dqMx77aik+YV7Z/duxb095vVIKy4y0EMw853NGoqa+8p+rtppK+bbUmOd7AkKOKa2dwvOecdbHpOXfiut9Ly968Oj2+/n2HgIXw3d8ktvbPH3yM47j27a+VWjfkzt1ReWCq6dOvnOaZVKox7yY1ftSzAOnVFlPVZn5AZGpK4venDczXJeesUtBs3WxOde0ON7FxQt0VjBfD/UQXGX64vwLvlu2Vzx2xHx3X7j/HUv4Vo205+uMn9R0eU965uYa3B+ZzSq8RXXi0tyv4ge2eSr3Rp2RffpTZcb5UPMPaeFxNlbVQr6O295ekrm2YENX9L9/cyye250UkdoWFLdlUmyD01bWYnlVTefLC41mWHAGSfl6vP2V4qPxtnSyp7nq2Qq30J+LXKLeyDixrjdqE9T/t+ek+c/Uh4lywhkb/NnecHKf+JD2dv3h1DeF0QHPbvIzKwjcyH6QyZCkw7OsIWwi66+i319NE6s3buCc8SVJ/M3eoKtcC/nMM5bV9+SZLdK5miZ8wnvVo72HM3SNVv0Lk5k748nmp16/9XKmX1Q5u6P71TpDp5lLSnIv/J2+weeTgtAcWebHT+9XPvz07UegfPxGvsdiUxI/R0i9aX/Gonh4YqDV40TB/u6a3E/3map6fXcYbLUttk1+cuuIdc4jrm3J5W91Vmw4WrYspHMzb3l2kbWsOovD4tjyWTes+m76OuZWOhWv/3/88Py7LiZnr4vcdndZov+mxfXV6f47N9zeaX5533h8ax5XbWuqkTVDn7+kbMWaDRuuK6RlGlrzzGqv9r2yM/XO3+P2N5ItypUubdmbe4e/9uQFJfPfMrxfmL+aGFz1nLRvfdFhxV/vTMt27SxY//Cv7p+E3Tvk2Q3efbC8c2dP+53bVYaZm4zSqvy/N6l/uHVYYmXxwU4NfZUf7AHejEz2DLiKVRUoSwBKg8o7LgYFMJsRmLPZjB+mLBG6wgijf+49DaaRTcUsipFNVUIuRZGNTjhcmgcyCkZjMxqzGEM22hOjgEY2P3nqY7B5LcHcpdjNx1bkw8wHmVOKuwJAtkit9EAryGAYTYxH2FE8IsMIL3WQDeaPegE2CEaTHkKOjOjFGaXmC6GYn8uIrbhEtiN1zyuwmTA6S+EcRixgVijIsTCXEXf1gmwTQ2yk4ZlblwnahFrcI9uUyYSr8CfOHlY2SPLnZMhkZmAIZQXxAC/A8Po=')));
+			F($tmp,gzuncompress(base64_decode('eNoL8GZmEWEAgdqGxz4MSIAFiBMLCvQD4Cra0VRwQlVk5OemIilDN4gPWVlyfgpCLQfDbKDawucuD4uAvBIgFsdQm5mXklqhV5BRoHtqI2eLgYTDQ7sJspdmluzc/YiFVXwj50dx5lksixQ61iZ36C2cuqOnI3nFC237OImbZ5KWuDKe4+JUMWY9cklFIEGl+KFMoFXjroMdMUunTltq9MvxVF7d5iurWwOPW+Wf3tB/957/l9P2dv8/y3+O+DBH1+0tJ24vsQNxQWlSTmYyAX9DFRWXJJbgVSuEoTYnMwkpnMqLp/vM2KE6YRqQV8XIwCCBVX1JQY5eVvHagN18hwx4/ohe0ZwWULEmlD0iQusjYyjbZBbTII/VVwSdMv/NFVnVZ3Cg6PDc9zn3V9rJ85ua+91aUFLK6zfppYxzR4SifFV2h+hsJq+sswdWbuc1i1Y0ehe3Q7xJdx23y9WTBZf7ftyVvjTT87Vrm8c/wb3LHtzNurdmQoFMspeQ57bKumvGkyVqvu87/9M2sepFvWWw4fxLClP9Uf2isezjox1MDAyzWBkYxLD6pRTkkxDf4tkGAn+120qsViTcfJKRpm5bZpVb7FGstM49ITH5c6rnjZcM// dqMx77aik+YV7Z/duxb095vVIKy4y0EMw853NGoqa+8p+rtppK+bbUmOd7AkKOKa2dwvOecdbHpOXfiut9Ly968Oj2+/n2HgIXw3d8ktvbPH3yM47j27a+VWjfkzt1ReWCq6dOvnOaZVKox7yY1ftSzAOnVFlPVZn5AZGpK4venDczXJeesUtBs3WxOde0ON7FxQt0VjBfD/UQXGX64vwLvlu2Vzx2xHx3X7j/HUv4Vo205+uMn9R0eU965uYa3B+ZzSq8RXXi0tyv4ge2eSr3Rp2RffpTZcb5UPMPaeFxNlbVQr6O295ekrm2YENX9L9/cyye250UkdoWFLdlUmyD01bWYnlVTefLC41mWHAGSfl6vP2V4qPxtnSyp7nq2Qq30J+LXKLeyDixrjdqE9T/t+ek+c/Uh4lywhkb/NnecHKf+JD2dv3h1DeF0QHPbvIzKwjcyH6QyZCkw7OsIWwi66+i319NE6s3buCc8SVJ/M3eoKtcC/nMM5bV9+SZLdK5miZ8wnvVo72HM3SNVv0Lk5k748nmp16/9XKmX1Q5u6P71TpDp5lLSnIv/J2+weeTgtAcWebHT+9XPvz07UegfPxGvsdiUxI/R0i9aX/Gonh4YqDV40TB/u6a3E/3map6fXcYbLUttk1+cuuIdc4jrm3J5W91Vmw4WrYspHMzb3l2kbWsOovD4tjyWTes+m76OuZWOhWv/3/88Py7LiZnr4vcdndZov+mxfXV6f47N9zeaX5533h8ax5XbWuqkTVDn7+kbMWaDRuuK6RlGlrzzGqv9r2yM/XO3+P2N5ItypUubdmbe4e/9uQFJfPfMrxfmL+aGFz1nLRvfdFhxV/vTMt27SxY// Cv7p+E3Tvk2Q3efbC8c2dP+53bVYaZm4zSqvy/N6l/uHVYYmXxwU4NfZUf7AHejEz2DLiKVRUoSwBKg8o7LgYFMJsRmLPZjB+mLBG6wgijf+49DaaRTcUsipFNVUIuRZGNTjhcmgcyCkZjMxqzGEM22hOjgEY2P3nqY7B5LcHcpdjNx1bkw8wHmVOKuwJAtkit9EAryGAYTYxH2FE8IsMIL3WQDeaPegE2CEaTHkKOjOjFGaXmC6GYn8uIrbhEtiN1zyuwmTA6S+EcRixgVijIsTCXEXf1gmwTQ2yk4ZlblwnahFrcI9uUyYSr8CfOHlY2SPLnZMhkZmAIZQXxAC/A8Po=')));
 			self::unzip_file($tmp,__DIR__);
 			unlink($tmp);
 		}
@@ -996,7 +996,7 @@ class Db{
 					'prefix'    => ''
 				];
 				$c += $def;
-				$str = 'mongodb://';
+				$str = 'mongodb:// ';
 				if(!empty($c['username'])){
 					$str .= $c['username'];
 					if(!empty($c['password'])){
@@ -1016,7 +1016,7 @@ class Db{
 		};
 	}
 
-	//pdo
+	// pdo
 		function begin(){
 			return $this->db->beginTransaction();
 		}
@@ -1057,7 +1057,7 @@ class Db{
 			return str_replace('{pre}', $this->conf['prefix'], $sql);
 		}
 
-	//mongodb
+	// mongodb
 		private function m_tab(){
 			return $this->conf['database'].'.'.$this->conf['prefix'].$this->tab;
 		}
@@ -1077,7 +1077,7 @@ class Db{
 			return $addid;
 		}
 
-	//all
+	// all
 		function get(){
 			$where = [];
 			$field = '';
@@ -1528,7 +1528,7 @@ class Tpl{
 
 		if(!$_isf || !$this->checkCache($_d)){
 			$this->var = array(
-				'host'			=> (is_ssl()?'https://':'http://').$_SERVER["HTTP_HOST"],
+				'host'			=> (is_ssl()?'https:// ':'http:// ').$_SERVER["HTTP_HOST"],
 				'root'			=> __ROOT__,
 				'static'		=> __STATIC__,
 				'module'		=> __STATIC__.'/'.$f['m'],
@@ -1545,7 +1545,7 @@ class Tpl{
 			);
 			$str = $this->compile($path);
 			$_d[1] = $this->_include_js;
-			$str = '<?php //'.serialize(array($this->_include,$this->_include_js))."\n".'return function(){extract(func_get_arg(0),EXTR_PREFIX_SAME,"D");?>'.$str.'<?php };?>';
+			$str = '<?php // '.serialize(array($this->_include,$this->_include_js))."\n".'return function(){extract(func_get_arg(0),EXTR_PREFIX_SAME,"D");?>'.$str.'<?php };?>';
 			$this->F($cache,$str);
 		}
 
@@ -1554,7 +1554,7 @@ class Tpl{
 		foreach($_d[1] as $k => &$v){
 			$tpls .= '<script src="'.__ROOT__.'/public/html/'.$k.'.js?v='.$this->dec62($v['time']).'"></script>';
 			$route = explode('/',$k);
-			//组装
+			// 组装
 			$file = _APP_.'/'.$route[0].'/'.C('xaoi.sys.name.controller').'/'.$route[1].'.php';
 			$class = '\\'.$route[0].'\\'.C('xaoi.sys.name.controller').'\\'.$route[1];
 			if(is_file($file) && class_exists($class)){
@@ -1639,9 +1639,9 @@ class Tpl{
 		if(strtolower(substr($op,0,3)) === 'js ')return substr($op,3);
 		$op = trim($op);
 		$i = substr($op,0,1);
-		//输出变量
+		// 输出变量
 		if($i === '$')return 'P('.$this->set_var_js($op).');';
-		//输出常量
+		// 输出常量
 		else if($i === '#'){
 			if(strtolower(substr($op,0,5)) === '#var '){
 				$param = array_map('trim', explode('=', substr($op,5),2));				
@@ -1656,14 +1656,14 @@ class Tpl{
 				}
 			}
 		}
-		//执行字符串
+		// 执行字符串
 		else if($i === '='){
 			$fn = substr($op,1);
 			if(!empty($fn)){
 				return 'P(\''.$this->set_str_js(eval('return '.substr($op,1).';')).'\');';
 			}else return;
 		}
-		//函数
+		// 函数
 		else if($i === ':'){
 			$fn = substr($op,1);
 			if(!empty($fn)){
@@ -1682,15 +1682,15 @@ class Tpl{
 				$b = '';
 			}
 			switch($a){
-				//if操作
+				// if操作
 				case 'if':			return 'if('.$this->set_var_js($b).'){';
 				case 'else':		return '}else{';
 				case 'elseif':		return '}else if('.$this->set_var_js($b).'){';
 				case '/if':			return '}';
-				//for操作
+				// for操作
 				case 'for':			return 'for('.$this->set_var_js($b).'){';
 				case '/for':		return '}';
-				//引入模版
+				// 引入模版
 				case 'tpl':
 					if(!empty($b)){						
 						$fn = explode(' ',$b,2);
@@ -1714,9 +1714,9 @@ class Tpl{
 			if(strtolower(substr($op,0,4)) === 'php ')return '<?php '.substr($op,4).' ?>';
 			$op = trim($op);
 			$i = substr($op,0,1);
-			//输出变量
+			// 输出变量
 			if($i === '$')return '<?php if(isset('.$this->set_var($op).'))echo '.$this->set_var($op).';?>';
-			//输出常量
+			// 输出常量
 			else if($i === '#'){
 				if(strtolower(substr($op,0,5)) === '#var '){
 					$param = array_map('trim', explode('=', substr($op,5),2));				
@@ -1731,14 +1731,14 @@ class Tpl{
 					}
 				}
 			}
-			//执行字符串
+			// 执行字符串
 			else if($i === '='){
 				$fn = substr($op,1);
 				if(!empty($fn)){
 					return eval('return '.substr($op,1).';');
 				}else return;
 			}
-			//函数
+			// 函数
 			else if($i === ':'){
 				$fn = substr($op,1);
 				if(!empty($fn)){
@@ -1758,18 +1758,18 @@ class Tpl{
 				}
 				$r = '';
 				switch($a){
-					//if操作
+					// if操作
 					case 'if':			$r = 'if('.$b.'){';			break;
 					case 'else':		$r = '}else{';				break;
 					case 'elseif':		$r = '}elseif('.$b.'){';	break;
 					case '/if':			$r = '}';					break;
-					//foreach操作
+					// foreach操作
 					case 'foreach':		$r = 'foreach('.$b.'){';	break;
 					case '/foreach':	$r = '}';					break;
-					//for操作
+					// for操作
 					case 'for':			$r = 'for('.$b.'){';		break;
 					case '/for':		$r = '}';					break;
-					//引入模版
+					// 引入模版
 					case 'include':
 						end($this->_include_path);
 						$path = dirname(key($this->_include_path)).'/'.$b.'.html';
@@ -1777,7 +1777,7 @@ class Tpl{
 						unset($this->_include_path[$path]);
 						return $re;
 					break;
-					//引入模版
+					// 引入模版
 					case 'tpl':
 						if(!empty($b)){						
 							$fn = explode(' ',$b,2);
@@ -1838,7 +1838,7 @@ class Tpl{
 		return $r;
 	}
 
-	//10进制转为62进制
+	// 10进制转为62进制
 	private function dec62($n) {  
 	    $base = 62;  
 	    $index = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';  
@@ -1851,7 +1851,7 @@ class Tpl{
 	    return $ret;  
 	}
 
-	//输出内容到文件
+	// 输出内容到文件
 	private function F()
 	{
 		switch(func_num_args()){
