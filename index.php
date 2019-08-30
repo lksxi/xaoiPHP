@@ -121,7 +121,7 @@ function C($k){
 		$t->display($f);
 	}
 
-	// 获取数据库选择函数或表对象
+	// 获取表选择函数或表对象
 	function db(){
 		switch(func_num_args()){
 			case 0:
