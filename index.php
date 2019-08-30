@@ -804,8 +804,8 @@ final class Xaoi{
 			} else {
 				_E('Class: '.$class.' 不存在 file:'.$file);
 			}
-            return false;
-        });
+			return false;
+		});
 
 		$route = self::route();
 
@@ -924,7 +924,7 @@ final class Xaoi{
 			}
 			if(!empty($info[1]))$r['c'] = strtolower(trim($info[1]));
 			if(!empty($info[2]))$r['a'] = strtolower(trim($info[2]));
-                    
+
 			$count = count($info)-3;
 			if($count > 0){
 				for($i = 0,$s = intval($count/2)+$count%2;$i!=$s;++$i){
