@@ -3,7 +3,7 @@
 
 ## 简述
 
-**xaoiPHP**是一款简单的PHP MVC框架，目的是方便学习《手把手编写自己的PHP MVC框架》教程的同学下载源代码，详细介绍请参考网站：http://www.awaimai.com/128.html 。
+**xaoiPHP**是一款简单的PHP单文件 MVC框架，最开始时目的是一个单纯的面向对象环境，现在集成了常用的函数+数据库(PDO,mongodb)+模板引擎，详细介绍请参考：https://lksxi.github.io/xaoi-php/
 
 要求：
 
@@ -17,6 +17,7 @@ project			根目录
 │  ├─code		控制器目录
 │  ├─view		视图目录
 ├─static		静态文件目录
+├─.htaccess		Apache伪静态
 ├─index.php		入口文件
 ```
 
@@ -72,6 +73,7 @@ $config['db']['dbname'] = 'project';
 然后设置单一入口， Apache服务器配置：
 ```
 <IfModule mod_rewrite.c>
+    Options +FollowSymlinks
     # 打开Rerite功能
     RewriteEngine On
 
