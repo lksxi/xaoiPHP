@@ -796,7 +796,7 @@ final class Xaoi{
 		date_default_timezone_set('PRC');
 		
 		// 设置自动加载
-        spl_autoload_register(function ($class) {
+		spl_autoload_register(function ($class) {
 			$file = _APP_ . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php';
 			if(is_file($file)){
 				require_once $file;
