@@ -1,13 +1,14 @@
 <?php
 // v2019/01/14
-// 检测PHP环境
-if(version_compare(PHP_VERSION,'5.4.0','<')) die('require PHP > 5.4.0 !');
 
 // 开启调试模式 建议开发阶段开启 部署阶段注释或者设为false
 define('APP_DEBUG',true);
 
 // 定义应用目录
 define('APP_PATH','app');
+
+// 检测PHP环境
+if(APP_DEBUG && version_compare(PHP_VERSION,'5.4.0','<')) die('require PHP > 5.4.0 !');
 
 // 入口
 Xaoi::start();
@@ -42,7 +43,6 @@ function C($k){
 				'cookie'	=> 'LHZtpVJApBMx4EJeevn6GBhZLzvuOkVA',
 				'host'	=> array(
 					'127.0.0.1',
-					'192.168.0.2',
 					'localhost',
 				),
 				'name'	=> array(
@@ -114,6 +114,677 @@ function C($k){
 	return $p;
 }
 
+//常用函数
+	//快速实例化模板
+	function _tpl($d = null,$f = ''){
+		$t = new Tpl($d);
+		$t->display($f);
+	}
+
+	//获取数据库选择函数或表对象
+	function db(){
+		switch(func_num_args()){
+			case 0:
+				$id = 'default';
+				if(empty(Db::$_fn[$id])){
+					$dbarr = C('xaoi.database');
+					Db::$_fn[$id] = Db::connect($id,$dbarr[$id]);
+				}
+				$r_tab = '';
+			break;
+			case 1:
+				$r_tab = func_get_arg(0);
+				if($r_tab[0] === ':'){
+					$id = substr($r_tab,1);
+					$r_tab = '';
+				}else{
+					$id = 'default';
+				}
+				if(empty(Db::$_fn[$id])){
+					$dbarr = C('xaoi.database');
+					Db::$_fn[$id] = Db::connect($id,$dbarr[$id]);
+				}
+			break;
+			case 2:
+				$id = func_get_arg(0);
+				if(empty(Db::$_fn[$id])){
+					Db::$_fn[$id] = Db::connect($id,func_get_arg(1));
+				}
+				$r_tab = '';
+			break;
+		}
+		return empty($r_tab)?Db::$_fn[$id]:Db::$_fn[$id]($r_tab);
+	}
+
+	//调试输出
+	function P($var){
+		if(php_sapi_name() === 'cli'){
+			echo "\n";
+			if (is_null($var))var_dump(NUll);else print_r($var);
+			echo "\n\n";
+		}else{
+			if(!defined('SET_UTF8')){
+				define('SET_UTF8',true);
+				header("Content-type: text/html; charset=utf-8");
+				echo '<meta content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=0,minimal-ui" name="viewport" />'."\n";
+			}
+			echo '<pre style="position:relative;z-index:1000;padding:10px;border-radius:5px;background:#f5f5f5;border:1px solid #aaa;font-size:14px;line-height:18px;opacity:0.9;"'."\n".'>';
+			if (is_bool($var))var_dump($var);else if (is_null($var))var_dump(NUll);else print_r($var);
+			echo "\n</pre>\n\n";	
+		}
+	}
+
+	//调试输出并退出
+	function _P($var){
+		P($var);
+		exit;
+	}
+
+	//错误输出
+	function E($ts1,$ts2 = ''){
+		if(APP_DEBUG){
+			$ts = $ts1;
+		}else{
+			$ts = $ts2;
+		}
+		if(php_sapi_name() === 'cli'){
+			echo "\nerror:>>\n\n";
+			if (is_null($ts))var_dump(NUll);else print_r($ts);
+			echo "\n\n<<\n";
+		}else{
+			if(!defined('SET_UTF8')){
+				define('SET_UTF8',true);
+				header("Content-type: text/html; charset=utf-8");
+				echo '<meta content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=0,minimal-ui" name="viewport" />'."\n";
+			}
+			echo '<title>出错了！</title><pre style="position:relative;z-index:1000;padding:10px;border-radius:5px;background:#fab9a3;border:1px solid #aaa;font-size:14px;line-height:18px;opacity:0.9;"'."\n".'>';
+			if (is_bool($ts))var_dump($ts);else if (is_null($ts))var_dump(NUll);else print_r($ts);
+			echo "\n</pre>\n\n";
+		}
+	}
+
+	//错误输出并退出
+	function _E($var){
+		E($var);
+		exit;
+	}
+
+	//退出提示并跳转-需要自定义
+	function _exit($s,$u=false){
+		header("Content-type: text/html; charset=utf-8");
+		if($u !== false)header('refresh:3;url='.(empty($u)?U('/'):$u));
+		exit('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><div style="font-size:24px;">'.$s.'</div>');
+	}
+
+	//获取并过滤变量
+	function I($_p){
+		if(is_array($_p)){
+			foreach($_p as &$v){
+				$v = I($v);
+			}
+		}else{
+			$tmp = explode('?',$_p,2);
+			$zz = isset($tmp[1])?$tmp[1]:null;
+			$tmp = explode('=',$tmp[0],2);
+			$def = isset($tmp[1])?$tmp[1]:null;
+			$tmp = explode('/',$tmp[0],2);
+			$type = isset($tmp[1])?$tmp[1]:null;
+			$a = explode('.',$tmp[0]);
+			$key = array_shift($a);
+			switch($key){
+				case 'get':
+					$p = &$_GET;
+				break;
+				case 'post':
+					$p = &$_POST;
+				break;
+				case 'files':
+					$p = &$_FILES;
+				break;
+				case 'request':
+					$p = &$_REQUEST;
+				break;
+				case 'session':
+					$p = &$_SESSION;
+				break;
+				case 'cookie':
+					$p = &$_COOKIE;
+				break;
+				case 'server':
+					$p = &$_SERVER;
+				break;
+				case 'globals':
+					$p = &$GLOBALS;
+				break;
+				default:
+					return;
+				break;
+			}
+			for($i=0,$l=count($a);$i!=$l;++$i){
+				if(!is_array($p)){
+					break;
+				}else{
+					$p = &$p[$a[$i]];
+				}
+			}
+			$_p = $p;
+			if(is_null($_p)){
+				if(is_null($def)){
+					exit('input error');
+				}else{
+					$_p = $def;
+				}
+			}elseif(!is_null($zz)){
+				if(1 !== preg_match($zz,(string)$_p)){
+					if(is_null($def)){
+						exit('input error');
+					}else{
+						$_p = $def;
+					}
+				}
+			}
+			switch($type){
+				case 'i':
+					$_p = (int)$_p;
+				break;
+				case 'f':
+					$_p = (float)$_p;
+				break;
+				case 'd':
+					$_p = (double)$_p;
+				break;
+				case 's':
+					$_p = htmlspecialchars($_p);
+				break;
+				case 'b':
+					$_p = (bool)$_p;
+				break;
+				case 'a':
+					$_p = (array)$_p;
+				break;
+				case 'o':
+					$_p = (object)$_p;
+				break;
+			}
+		}
+		return $_p;
+	}
+
+	//获取url地址
+	function U($url = '',$vars='',$suffix=true){
+		$c = array('m'=>MODULE,'c'=>CONTROLLER,'a'=>ACTION);
+		$info   =  parse_url($url);
+		$url    =  !empty($info['path'])?$info['path']:ACTION;
+		if(isset($info['fragment'])) {
+			$anchor =   $info['fragment'];
+			if(false !== strpos($anchor,'?')) {
+				list($anchor,$info['query']) = explode('?',$anchor,2);
+			}        
+			if(false !== strpos($anchor,'@')) {
+				list($anchor,$host)    =   explode('@',$anchor, 2);
+			}
+		}elseif(false !== strpos($url,'@')) {
+			list($url,$host)    =   explode('@',$info['path'], 2);
+		}
+		$url_type = C('xaoi.sys.route.url.type');
+		if(is_int($vars)) {
+			if(in_array($vars,array(0,1,2)))$url_type = $vars;
+			$vars = '';
+		}elseif(is_string($vars) && $vars != '') {
+			parse_str($vars,$vars);
+		}elseif(!is_array($vars)){
+			$vars = array();
+		}
+		if(isset($info['query'])) {
+			parse_str($info['query'],$params);
+			$vars = array_merge($params,$vars);
+		}
+		if($url){
+			$r='';
+			if(isset($host))$r=(is_ssl()?'https://':'http://').(empty($host)?$_SERVER["HTTP_HOST"]:$host);
+			$root = __ROOT__;
+			if(!empty($root))$r .= $root;
+			$filename = substr($_SERVER['SCRIPT_NAME'],strrpos($_SERVER['SCRIPT_NAME'] ,'/')+1);
+			switch($url_type){
+				case 0:
+					$r .= '/'.$filename.'?'.C('xaoi.sys.route.url.info').'=';
+					$suffix = false;
+				break;
+				case 1:
+					$r .= '/'.$filename.'/';
+				break;
+				case 2:
+					$r .= '/';
+				break;
+			}
+			if(strpos($url,'>')){
+				list($show,$url) = explode('>',$url, 2);
+			}
+			if($url[0] != '/'){
+				$urls = explode('/',$url);
+				krsort($urls);
+				$a = array('a','c','m');
+			}else{
+				$urls = explode('/',substr($url,1));
+				$a = array('m','c','a');
+				$c = array(
+					'm'	=> C('xaoi.sys.route.default_name.module'),
+					'c'	=> C('xaoi.sys.route.default_name.controller'),
+					'a'	=> C('xaoi.sys.route.default_name.action')
+				);
+			}
+			$urls = array_values($urls);
+			for($i = 0;$i != 3;++$i){
+				if(!empty($urls[$i]))$c[$a[$i]] = $urls[$i];
+			}
+			$space = C('xaoi.sys.route.url.space');
+			$r .= $c['m'].$space.$c['c'].$space.$c['a'];
+
+			if(!empty($vars)) {
+				foreach ($vars as $var => $val){
+					if('' !== trim($val))   $r .= $space . $var . $space . urlencode(trim($val));
+				}      
+			}
+
+			if($suffix) {
+				$r .= $suffix===true ?C('xaoi.sys.route.url.suffix') :$suffix;
+			}
+
+			if(isset($anchor))$r .= '#'.$anchor;
+
+			if(!empty($show)){
+				switch($show){
+					case 'script':
+						$r = '<script src="'.$r.'"></script>';
+					break;
+				}
+			}
+			return $r;
+		}
+	}
+
+	//输出到浏览器-U函数
+	function _U(){
+		return '<script src="'.__ROOT__.'/public/static/lib/u.js">'.json(array(
+				'__root__'=>__ROOT__,
+				'file'=>substr($_SERVER['SCRIPT_NAME'],strrpos($_SERVER['SCRIPT_NAME'] ,'/')+1),
+				'url'=>C('xaoi.sys.route.url'),
+				'is_default'=>C('xaoi.sys.route.is_default'),
+				'path'=>array('m'=>MODULE,'c'=>CONTROLLER,'a'=>ACTION),
+				'def'=>array(
+					'm'	=> C('xaoi.sys.route.default_name.module'),
+					'c'	=> C('xaoi.sys.route.default_name.controller'),
+					'a'	=> C('xaoi.sys.route.default_name.action')
+				)
+			)).'</script>';
+	}
+
+	//设置cookie
+	function cookie(){
+		switch(func_num_args()){
+			case 0:
+				return $_COOKIE;
+			break;
+			case 1:
+				$k = func_get_arg(0);
+				if(isset($_COOKIE[$k])){
+					return $_COOKIE[$k];
+				}elseif(is_null($k) || $k == ''){
+					foreach($_COOKIE as $key => &$value){
+						setcookie($key,null,null,'/');
+					}
+					$c = $_COOKIE;
+					$_COOKIE = array();
+					return $c;
+				}
+			break;
+			case 2:
+				$k = func_get_arg(0);
+				$v = func_get_arg(1);
+				if(!is_null($k)){
+					if(is_null($v) || $v == ''){
+						unset($_COOKIE[$k]);
+						setcookie($k,null,null,'/');
+					}else{
+						$_COOKIE[$k] = $v;
+						setcookie($k,$v,null,'/');		
+					}
+				}
+			break;
+			case 3:
+				$k = func_get_arg(0);
+				$v = func_get_arg(1);
+				$o = func_get_arg(2);
+				if(!is_null($k)){
+					if(is_null($v) || $v == ''){
+						unset($_COOKIE[$k]);
+						setcookie($k,null,null,'/');
+					}else{
+						$_COOKIE[$k] = $v;
+						if(is_numeric($o)){
+							setcookie($k,$v,$o,'/');
+						}elseif(is_array($o)){
+							setcookie(
+								$k,
+								$v,
+								!empty($o['expire']) && is_numeric($o['expire'])?$o['expire']:(time()+3600*24),
+								!empty($o['path'])?$o['path']:'/',
+								!empty($o['domain'])?$o['domain']:'',
+								!empty($o['secure'])?$o['secure']:''
+							);
+						}
+					}
+				}
+			break;
+		}
+	}
+
+	//设置session
+	function session(){
+		if(empty($_SESSION)){
+			session_start();
+		}
+		switch(func_num_args()){
+			case 0:
+				return $_SESSION;
+			break;
+			case 1:
+				$k = func_get_arg(0);
+				if(is_array($k)){
+					foreach($k as $key => &$value){
+						$_SESSION[$key] = $value;	
+					}
+				}elseif(is_null($k)){
+					session_unset();
+					session_destroy();
+				}elseif(!empty($k)){
+					if($k === ':'){
+						$k = MODULE;
+					}elseif($k[0] === ':'){
+						$k = MODULE.'.'.substr($k,1);
+					}
+					$k = explode('.',$k);
+					$p = &$_SESSION;
+					for($i=0,$l=count($k);$i!=$l;++$i){
+						if(!is_array($p))return;
+						$p = &$p[$k[$i]];
+					}
+					return $p;
+				}
+			break;
+			case 2:
+				$k = func_get_arg(0);
+				$v = func_get_arg(1);
+				if(!empty($k)){
+					if($k === ':'){
+						$k = MODULE;
+					}elseif($k[0] === ':'){
+						$k = MODULE.'.'.substr($k,1);
+					}
+					$k = explode('.',$k);
+					$p = &$_SESSION;
+					for($i=0,$l=count($k);$i!=$l;++$i){
+						if(!is_array($p))$p=array();
+						$p = &$p[$k[$i]];
+					}
+					$p = $v;
+				}
+			break;
+		}
+	}
+	
+	//获取或修改文件
+	function F()
+	{
+		switch(func_num_args()){
+			case 1:
+				$p = func_get_arg(0);
+				if(!empty($p) && (is_file($p) || substr($p,0,4) == 'http'))return file_get_contents($p);
+			break;
+			case 2:
+				$p = func_get_arg(0);		
+				$v = func_get_arg(1);
+				if(!empty($p) && !empty($v)){
+					if(!is_string($v))$v = serialize($v);
+					if(!is_dir(dirname($p)))mkdir(dirname($p),0777,true);
+					return file_put_contents($p,$v);
+				}
+			break;
+		}
+	}
+
+	//json编码
+	function json($d,$is_obj = false){
+		return json_encode($d,$is_obj?JSON_FORCE_OBJECT|JSON_UNESCAPED_UNICODE:JSON_UNESCAPED_UNICODE);
+	}
+
+	//json编码-输出-退出
+	function _json($d){
+		exit(json($d));
+	}
+
+	//是否ajax访问
+	function is_ajax($is = false){
+		if(is_referer($is) && !empty($_SERVER['HTTP_AJAX']) && $_SERVER['HTTP_AJAX'] === 'XAOI')return true;
+		if($is)exit;
+		return false;
+	}
+
+	//是否指定域名访问
+	function is_referer($is = false){
+		if(!empty($_SERVER['HTTP_REFERER'])){
+			$url = parse_url($_SERVER['HTTP_REFERER']);
+			if(!empty($url['host']) && in_array($url['host'], C('xaoi.sys.host')))return true;
+		}
+		if($is)exit;
+		return false;
+	}
+
+	//获取url数据-file_get_contents
+	function post($url,$data=' ',$cookie = ''){
+		if(is_array($data)){
+			$data = http_build_query($data);
+			if(empty($data))$data=' ';
+		}
+		if(is_array($cookie)){
+			foreach($cookie as $k => &$v){
+				$v = $k.'='.$v;
+			}
+			$cookie = implode('; ',$cookie);
+		}
+		return file_get_contents($url,false,stream_context_create(array('http'=>array(
+			'method'=>'POST',
+			'header'=>
+				'Content-type: application/x-www-form-urlencoded'."\r\n".
+				($cookie != ''?('Cookie: '.$cookie."\r\n"):'').
+				'Content-length: '.strlen($data)."\r\n",
+			'content'=>$data))));
+	}
+
+	//获取url数据-curl
+	function _post($url, $data = array(),$cookie = ''){	
+		if(is_array($cookie)){
+			foreach($cookie as $k => &$v){
+				$v = $k.'='.$v;
+			}
+			$cookie = implode(';',$cookie);
+		}
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		if(!empty($data)){
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		}
+		if(!empty($cookie)){
+			curl_setopt($ch, CURLOPT_COOKIE, $cookie);
+		}
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+		curl_setopt($ch, CURLOPT_HEADER, false);
+		curl_setopt($ch, CURLOPT_ENCODING, 'gzip');
+		$r = curl_exec($ch);
+		curl_close($ch);
+		return $r;
+	}
+
+	//获取url数据-fsockopen-可异步
+	function _fsockopen($url,$post = array(),$exit = false,$referer = ''){
+		$par = parse_url($url);
+		if($par['scheme'] === 'http' || $par['scheme'] === 'https'){
+			if( $par['scheme'] === 'https'){
+				$ssl = 'ssl://';
+				if(!isset($par['port']))$par['port'] = 443;
+			}else{
+				$ssl = '';
+				if(!isset($par['port']))$par['port'] = 80;
+			}
+
+			if(isset($par['path'])){
+				$path = substr($url,strpos($url,'/',strpos($url,$par['host'])+strlen($par['host'])));
+			}else{
+				$path = '/';
+			}
+
+			if($post) {
+				if(is_array($post))
+				{
+					$post = http_build_query($post);
+				}
+				$out = "POST ".$path." HTTP/1.0\r\n";
+				$out .= "Accept: */*\r\n";
+				if(!empty($referer))$out .= "Referer: ".$referer."\r\n";
+				$out .= "Accept-Language: zh-cn\r\n";
+				$out .= "Content-Type: application/x-www-form-urlencoded\r\n";
+				$out .= "User-Agent: ".$_SERVER['HTTP_USER_AGENT']."\r\n";
+				$out .= "Host: ".$par['host']."\r\n";
+				$out .= 'Content-Length: '.strlen($post)."\r\n";
+				$out .= "Connection: Close\r\n";
+				$out .= "Cache-Control: no-cache\r\n\r\n";
+				$out .= $post;
+			} else {
+				$out = "GET ".$path." HTTP/1.0\r\n";
+				$out .= "Accept: */*\r\n";
+				if(!empty($referer))$out .= "Referer: ".$referer."\r\n";
+				$out .= "Accept-Language: zh-cn\r\n";
+				$out .= "User-Agent: ".$_SERVER['HTTP_USER_AGENT']."\r\n";
+				$out .= "Host: ".$par['host']."\r\n";
+				$out .= "Connection: Close\r\n";
+				$out .= "Cache-Control: no-cache\r\n\r\n";
+			}
+
+			$fp = fsockopen($ssl.$par['host'], $par['port'], $errno, $errstr, 30);   
+			if(!$fp)return false;
+
+			fwrite($fp, $out);
+			if($exit)return;
+			$r = '';
+			while (!feof($fp)) {
+				$r .= fgets($fp, 128);
+			}
+			fclose($fp);
+			return $r;
+		}
+	}
+
+	//批量获取url数据
+	function posts($arr,$fn = null){
+		$chs = array();
+		foreach($arr as $url => &$v){
+			$chs[$url] = curl_init();
+			$ch = &$chs[$url];
+			curl_setopt($ch, CURLOPT_URL, $url);
+			if(!empty($v['data'])){
+				curl_setopt($ch, CURLOPT_POST, true);
+				curl_setopt($ch, CURLOPT_POSTFIELDS, $v['data']);
+			}
+			if(!empty($v['cookie'])){
+				if(is_array($v['cookie'])){
+					foreach($v['cookie'] as $k2 => &$v2){
+						$v2 = $k2.'='.$v2;
+					}
+					$v['cookie'] = implode(';',$v['cookie']);
+				}
+				curl_setopt($ch, CURLOPT_COOKIE, $v['cookie']);
+			}
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+			curl_setopt($ch, CURLOPT_HEADER, false);
+			curl_setopt($ch, CURLOPT_ENCODING, 'gzip');
+		}
+		unset($ch);
+		unset($v);
+		$mh = curl_multi_init();
+		foreach($chs as &$ch){
+			curl_multi_add_handle($mh, $ch);
+		}
+		unset($ch);
+
+		$active = null; 
+		do{
+			while(($mrc = curl_multi_exec($mh, $active)) == CURLM_CALL_MULTI_PERFORM);
+			if($mrc != CURLM_OK)break;
+			while ($done = curl_multi_info_read($mh)) {
+				$url = array_search($done['handle'],$chs);
+				$arr[$url]['info'] = curl_getinfo($done['handle']);
+				$arr[$url]['error'] = curl_error($done['handle']);
+				$arr[$url]['result'] = curl_multi_getcontent($done['handle']);
+				if(is_callable($fn))$fn($arr[$url]);
+				curl_multi_remove_handle($mh, $done['handle']);
+				curl_close($done['handle']);
+			}
+			if($active > 0)curl_multi_select($mh);
+		}while($active);
+		curl_multi_close($mh);
+		return $arr;
+	}
+
+	//获取当前模块下对象
+	function _new($c,$s = null){
+		if(strpos($c,':') === false){
+			$class = '\\'.str_replace('/','\\',$c);
+		}else{
+			list($m,$n) = explode(':',$c);
+			$class = '\\'.(empty($m)?MODULE:$m).'\\'.str_replace('/','\\',$n);
+		}
+		return is_null($s)?new $class():new $class($s);
+	}
+
+	//是否https访问
+	function is_ssl() {
+		if(isset($_SERVER['HTTPS']) && ('1' == $_SERVER['HTTPS'] || 'on' == strtolower($_SERVER['HTTPS']))){
+			return true;
+		}elseif(isset($_SERVER['SERVER_PORT']) && ('443' == $_SERVER['SERVER_PORT'] )) {
+			return true;
+		}
+		return false;
+	}
+
+	//是否手机访问
+	function ismobile(){
+		if (isset ($_SERVER['HTTP_X_WAP_PROFILE'])) return true; if(isset ($_SERVER['HTTP_CLIENT']) &&'PhoneClient'==$_SERVER['HTTP_CLIENT']) return true; if (isset ($_SERVER['HTTP_VIA'])) return stristr($_SERVER['HTTP_VIA'], 'wap') ? true : false; if (isset ($_SERVER['HTTP_USER_AGENT'])) { $clientkeywords = array( 'nokia','sony','ericsson','mot','samsung','htc','sgh','lg','sharp','sie-','philips','panasonic','alcatel','lenovo','iphone','ipod','blackberry','meizu','android','netfront','symbian','ucweb','windowsce','palm','operamini','operamobi','openwave','nexusone','cldc','midp','wap','mobile' ); if (preg_match("/(" . implode('|', $clientkeywords) . ")/i", strtolower($_SERVER['HTTP_USER_AGENT']))) { return true; } } if (isset ($_SERVER['HTTP_ACCEPT'])) { if ((strpos($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml') !== false) && (strpos($_SERVER['HTTP_ACCEPT'], 'text/html') === false || (strpos($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml') < strpos($_SERVER['HTTP_ACCEPT'], 'text/html')))) { return true; } } return false;
+	}
+
+	//url-base64
+	function url_base64_encode($string) {
+		$data = base64_encode($string);
+		$data = str_replace(array('+','/','='),array('-','_',''),$data);
+		return $data;
+	}
+
+	function url_base64_decode($string) {
+		$data = str_replace(array('-','_'),array('+','/'),$string);
+		$mod4 = strlen($data) % 4;
+		if ($mod4) {
+			$data .= substr('====', $mod4);
+		}
+		return base64_decode($data);
+	}
+
+// 入口
 final class Xaoi{
 	static function start(){
 		if(APP_DEBUG){
@@ -282,772 +953,7 @@ final class Xaoi{
 	}
 }
 
-//常用函数
-	function _log($d,$tab='',$f='error'){
-		if(empty($f))_E('_log 参数不能为空');
-		if(empty($tab))$tab = MODULE.'_'.CONTROLLER.'_'.ACTION;
-		$pf = 'log/'.$f.'.db';
-		$db = new DB(array(
-					'type'	=> 'sqlite',
-					'conf'	=> array(
-						'file'		=> $pf,
-						'prefix'    => ''
-					)
-				));
-		$sel = $db->select('sqlite_master')->field('name')->where(array('type'=>'table','name'=>$tab))->fetch(1);
-		if(empty($sel)){
-			$sql = 'CREATE TABLE "'.$tab.'" ("_id"  INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,';
-			foreach($d as $k => &$v){
-				if(is_long($v)){
-					$sql .= '"'.$k.'" INTEGER NOT NULL DEFAULT 0,';
-				}elseif(is_double($v)){
-					$sql .= '"'.$k.'" REAL NOT NULL DEFAULT 0,';
-				}else{
-					$sql .= '"'.$k.'" TEXT NOT NULL DEFAULT "",';
-				}
-			}
-			unset($v);
-			$sql .= '"_addtime" TIMESTAMP default (datetime(\'now\', \'localtime\')));';
-			$db->exec($sql);
-			$db->exec('CREATE TABLE "_php" ("name"  TEXT NOT NULL DEFAULT "<?php exit;?>");');
-		}
-		foreach($d as &$v){
-			if(!(is_numeric($v) || is_string($v)))$v = json_encode($v,true);
-		}
-		unset($v);
-		$db->insert($tab)->value($d);
-	}
-
-	function sqlite_create($db,$tab,$d){
-		if(is_string($db))$db = new Db(array('type' => 'sqlite','conf' => array('file'=> $db,'prefix'=>'')));
-		$sel = $db->select('sqlite_master')->field('name')->where(array('type'=>'table','name'=>$tab))->fetch(1);
-		if(empty($sel) && !empty($d)){
-			$sql = 'CREATE TABLE "'.$tab.'" ("id"  INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,';
-			foreach($d as $k => &$v){
-				if(is_long($v)){
-					$sql .= '"'.$k.'" INTEGER NOT NULL DEFAULT 0,';
-				}elseif(is_double($v)){
-					$sql .= '"'.$k.'" REAL NOT NULL DEFAULT 0,';
-				}else{
-					$sql .= '"'.$k.'" TEXT NOT NULL DEFAULT "",';
-				}
-			}
-			unset($v);
-			$sql = substr($sql,0,-1).');';
-			$db->exec($sql);
-		}
-	}
-	
-	function sqlite_list($db,$tab = ''){
-		if(is_string($db))$db = new Db(array('type' => 'sqlite','conf' => array('file'=> $db,'prefix'=>'')));
-		$d = array('type'=>'table');
-		if(!empty($tab))$d['name'] = $tab;
-		return $db->select('sqlite_master')->field('name')->where($d)->fetch();
-	}
-	
-	function sqlite_del($db,$tab){
-		if(is_string($db))$db = new Db(array('type' => 'sqlite','conf' => array('file'=> $db,'prefix'=>'')));
-		$sel = $db->select('sqlite_master')->field('name')->where(array('type'=>'table','name'=>$tab))->fetch(1);
-		if(!empty($sel)){
-			return $db->exec('DROP TABLE '.$tab.';');
-		}
-	}
-
-	function P($var){
-		if(php_sapi_name() === 'cli'){
-			echo "\n";
-			if (is_null($var))var_dump(NUll);else print_r($var);
-			echo "\n\n";
-		}else{
-			if(!defined('SET_UTF8')){
-				define('SET_UTF8',true);
-				header("Content-type: text/html; charset=utf-8");
-				echo '<meta content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=0,minimal-ui" name="viewport" />'."\n";
-			}
-			echo '<pre style="position:relative;z-index:1000;padding:10px;border-radius:5px;background:#f5f5f5;border:1px solid #aaa;font-size:14px;line-height:18px;opacity:0.9;"'."\n".'>';
-			if (is_bool($var))var_dump($var);else if (is_null($var))var_dump(NUll);else print_r($var);
-			echo "\n</pre>\n\n";	
-		}
-	}
-
-	function E($ts1,$ts2 = ''){
-		if(APP_DEBUG){
-			$ts = $ts1;
-		}else{
-			$ts = $ts2;
-		}
-		if(php_sapi_name() === 'cli'){
-			echo "\nerror:>>\n\n";
-			if (is_null($ts))var_dump(NUll);else print_r($ts);
-			echo "\n\n<<\n";
-		}else{
-			if(!defined('SET_UTF8')){
-				define('SET_UTF8',true);
-				header("Content-type: text/html; charset=utf-8");
-				echo '<meta content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=0,minimal-ui" name="viewport" />'."\n";
-			}
-			echo '<title>出错了！</title><pre style="position:relative;z-index:1000;padding:10px;border-radius:5px;background:#fab9a3;border:1px solid #aaa;font-size:14px;line-height:18px;opacity:0.9;"'."\n".'>';
-			if (is_bool($ts))var_dump($ts);else if (is_null($ts))var_dump(NUll);else print_r($ts);
-			echo "\n</pre>\n\n";
-		}
-	}
-
-
-
-	function url_base64_encode($string) {
-		$data = base64_encode($string);
-		$data = str_replace(array('+','/','='),array('-','_',''),$data);
-		return $data;
-	}
-
-	function url_base64_decode($string) {
-		$data = str_replace(array('-','_'),array('+','/'),$string);
-		$mod4 = strlen($data) % 4;
-		if ($mod4) {
-			$data .= substr('====', $mod4);
-		}
-		return base64_decode($data);
-	}
-
-	function _exit($s,$u=''){
-		header("Content-type: text/html; charset=utf-8");
-		if($u !== false)header('refresh:3;url='.(empty($u)?U('/'):$u));
-		exit('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><div style="font-size:24px;">'.$s.'</div>');
-	}
-
-
-	function _new($c,$s = null){
-		if(strpos($c,':') === false){
-			$class = '\\'.str_replace('/','\\',$c);
-		}else{
-			list($m,$n) = explode(':',$c);
-			$class = '\\'.(empty($m)?MODULE:$m).'\\'.str_replace('/','\\',$n);
-		}
-		return is_null($s)?new $class():new $class($s);
-	}
-	function _U(){
-		return '<script src="'.__ROOT__.'/public/static/lib/u.js">'.json(array(
-				'__root__'=>__ROOT__,
-				'file'=>substr($_SERVER['SCRIPT_NAME'],strrpos($_SERVER['SCRIPT_NAME'] ,'/')+1),
-				'url'=>C('xaoi.sys.route.url'),
-				'is_default'=>C('xaoi.sys.route.is_default'),
-				'path'=>array('m'=>MODULE,'c'=>CONTROLLER,'a'=>ACTION),
-				'def'=>array(
-					'm'	=> C('xaoi.sys.route.default_name.module'),
-					'c'	=> C('xaoi.sys.route.default_name.controller'),
-					'a'	=> C('xaoi.sys.route.default_name.action')
-				)
-			)).'</script>';
-	}
-
-	function U($url = '',$vars='',$suffix=true){
-		$c = array('m'=>MODULE,'c'=>CONTROLLER,'a'=>ACTION);
-		$info   =  parse_url($url);
-		$url    =  !empty($info['path'])?$info['path']:ACTION;
-		if(isset($info['fragment'])) {
-			$anchor =   $info['fragment'];
-			if(false !== strpos($anchor,'?')) {
-				list($anchor,$info['query']) = explode('?',$anchor,2);
-			}        
-			if(false !== strpos($anchor,'@')) {
-				list($anchor,$host)    =   explode('@',$anchor, 2);
-			}
-		}elseif(false !== strpos($url,'@')) {
-			list($url,$host)    =   explode('@',$info['path'], 2);
-		}
-		$url_type = C('xaoi.sys.route.url.type');
-		if(is_int($vars)) {
-			if(in_array($vars,array(0,1,2)))$url_type = $vars;
-			$vars = '';
-		}elseif(is_string($vars) && $vars != '') {
-			parse_str($vars,$vars);
-		}elseif(!is_array($vars)){
-			$vars = array();
-		}
-		if(isset($info['query'])) {
-			parse_str($info['query'],$params);
-			$vars = array_merge($params,$vars);
-		}
-		if($url){
-			$r='';
-			if(isset($host))$r=(is_ssl()?'https://':'http://').(empty($host)?$_SERVER["HTTP_HOST"]:$host);
-			$root = __ROOT__;
-			if(!empty($root))$r .= $root;
-			$filename = substr($_SERVER['SCRIPT_NAME'],strrpos($_SERVER['SCRIPT_NAME'] ,'/')+1);
-			switch($url_type){
-				case 0:
-					$r .= '/'.$filename.'?'.C('xaoi.sys.route.url.info').'=';
-					$suffix = false;
-				break;
-				case 1:
-					$r .= '/'.$filename.'/';
-				break;
-				case 2:
-					$r .= '/';
-				break;
-			}
-			if(strpos($url,'>')){
-				list($show,$url) = explode('>',$url, 2);
-			}
-			if($url[0] != '/'){
-				$urls = explode('/',$url);
-				krsort($urls);
-				$a = array('a','c','m');
-			}else{
-				$urls = explode('/',substr($url,1));
-				$a = array('m','c','a');
-				$c = array(
-					'm'	=> C('xaoi.sys.route.default_name.module'),
-					'c'	=> C('xaoi.sys.route.default_name.controller'),
-					'a'	=> C('xaoi.sys.route.default_name.action')
-				);
-			}
-			$urls = array_values($urls);
-			for($i = 0;$i != 3;++$i){
-				if(!empty($urls[$i]))$c[$a[$i]] = $urls[$i];
-			}
-			$space = C('xaoi.sys.route.url.space');
-			$r .= $c['m'].$space.$c['c'].$space.$c['a'];
-
-			if(!empty($vars)) {
-				foreach ($vars as $var => $val){
-					if('' !== trim($val))   $r .= $space . $var . $space . urlencode(trim($val));
-				}      
-			}
-
-			if($suffix) {
-				$r .= $suffix===true ?C('xaoi.sys.route.url.suffix') :$suffix;
-			}
-
-			if(isset($anchor))$r .= '#'.$anchor;
-
-			if(!empty($show)){
-				switch($show){
-					case 'script':
-						$r = '<script src="'.$r.'"></script>';
-					break;
-				}
-			}
-			return $r;
-		}
-	}
-
-	function _C(){
-		switch(func_num_args()){
-			case 1:
-				$k = func_get_arg(0);
-				if($k != ''){
-					$db = &_db();
-					return $db->select('config')->field('value')->where(array('name'=>$k))->limit(1)->fetch('value');
-				}
-			break;
-			case 2:
-				$k = func_get_arg(0);
-				$v = func_get_arg(1);
-				if($k != ''){
-					$db = &_db();
-					$db->update('config')->set(array('value'=>is_string($v) || is_numeric($v)?$v:serialize($v)))->where(array('name'=>$k));
-				}
-			break;
-		}
-	}
-
-	function post($url,$data=' ',$cookie = ''){
-		if(is_array($data)){
-			$data = http_build_query($data);
-			if(empty($data))$data=' ';
-		}
-		if(is_array($cookie)){
-			foreach($cookie as $k => &$v){
-				$v = $k.'='.$v;
-			}
-			$cookie = implode('; ',$cookie);
-		}
-		return file_get_contents($url,false,stream_context_create(array('http'=>array(
-			'method'=>'POST',
-			'header'=>
-				'Content-type: application/x-www-form-urlencoded'."\r\n".
-				($cookie != ''?('Cookie: '.$cookie."\r\n"):'').
-				'Content-length: '.strlen($data)."\r\n",
-			'content'=>$data))));
-	}
-
-	function _post($url, $data = array(),$cookie = ''){	
-		if(is_array($cookie)){
-			foreach($cookie as $k => &$v){
-				$v = $k.'='.$v;
-			}
-			$cookie = implode(';',$cookie);
-		}
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $url);
-		if(!empty($data)){
-			curl_setopt($ch, CURLOPT_POST, true);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-		}
-		if(!empty($cookie)){
-			curl_setopt($ch, CURLOPT_COOKIE, $cookie);
-		}
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-		curl_setopt($ch, CURLOPT_HEADER, false);
-		curl_setopt($ch, CURLOPT_ENCODING, 'gzip');
-		$r = curl_exec($ch);
-		curl_close($ch);
-		return $r;
-	}
-
-	function posts($arr,$fn = null){
-		$chs = array();
-		foreach($arr as $url => &$v){
-			$chs[$url] = curl_init();
-			$ch = &$chs[$url];
-			curl_setopt($ch, CURLOPT_URL, $url);
-			if(!empty($v['data'])){
-				curl_setopt($ch, CURLOPT_POST, true);
-				curl_setopt($ch, CURLOPT_POSTFIELDS, $v['data']);
-			}
-			if(!empty($v['cookie'])){
-				if(is_array($v['cookie'])){
-					foreach($v['cookie'] as $k2 => &$v2){
-						$v2 = $k2.'='.$v2;
-					}
-					$v['cookie'] = implode(';',$v['cookie']);
-				}
-				curl_setopt($ch, CURLOPT_COOKIE, $v['cookie']);
-			}
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-			curl_setopt($ch, CURLOPT_HEADER, false);
-			curl_setopt($ch, CURLOPT_ENCODING, 'gzip');
-		}
-		unset($ch);
-		unset($v);
-		$mh = curl_multi_init();
-		foreach($chs as &$ch){
-			curl_multi_add_handle($mh, $ch);
-		}
-		unset($ch);
-
-		$active = null; 
-		do{
-			while(($mrc = curl_multi_exec($mh, $active)) == CURLM_CALL_MULTI_PERFORM);
-			if($mrc != CURLM_OK)break;
-			while ($done = curl_multi_info_read($mh)) {
-				$url = array_search($done['handle'],$chs);
-				$arr[$url]['info'] = curl_getinfo($done['handle']);
-				$arr[$url]['error'] = curl_error($done['handle']);
-				$arr[$url]['result'] = curl_multi_getcontent($done['handle']);
-				if(is_callable($fn))$fn($arr[$url]);
-				curl_multi_remove_handle($mh, $done['handle']);
-				curl_close($done['handle']);
-			}
-			if($active > 0)curl_multi_select($mh);
-		}while($active);
-		curl_multi_close($mh);
-		return $arr;
-	}
-
-	function _fsockopen($url,$post = array(),$exit = false,$referer = ''){
-		$par = parse_url($url);
-		if($par['scheme'] === 'http' || $par['scheme'] === 'https'){
-			if( $par['scheme'] === 'https'){
-				$ssl = 'ssl://';
-				if(!isset($par['port']))$par['port'] = 443;
-			}else{
-				$ssl = '';
-				if(!isset($par['port']))$par['port'] = 80;
-			}
-
-			if(isset($par['path'])){
-				$path = substr($url,strpos($url,'/',strpos($url,$par['host'])+strlen($par['host'])));
-			}else{
-				$path = '/';
-			}
-
-			if($post) {
-				if(is_array($post))
-				{
-					$post = http_build_query($post);
-				}
-				$out = "POST ".$path." HTTP/1.0\r\n";
-				$out .= "Accept: */*\r\n";
-				if(!empty($referer))$out .= "Referer: ".$referer."\r\n";
-				$out .= "Accept-Language: zh-cn\r\n";
-				$out .= "Content-Type: application/x-www-form-urlencoded\r\n";
-				$out .= "User-Agent: ".$_SERVER['HTTP_USER_AGENT']."\r\n";
-				$out .= "Host: ".$par['host']."\r\n";
-				$out .= 'Content-Length: '.strlen($post)."\r\n";
-				$out .= "Connection: Close\r\n";
-				$out .= "Cache-Control: no-cache\r\n\r\n";
-				$out .= $post;
-			} else {
-				$out = "GET ".$path." HTTP/1.0\r\n";
-				$out .= "Accept: */*\r\n";
-				if(!empty($referer))$out .= "Referer: ".$referer."\r\n";
-				$out .= "Accept-Language: zh-cn\r\n";
-				$out .= "User-Agent: ".$_SERVER['HTTP_USER_AGENT']."\r\n";
-				$out .= "Host: ".$par['host']."\r\n";
-				$out .= "Connection: Close\r\n";
-				$out .= "Cache-Control: no-cache\r\n\r\n";
-			}
-
-			$fp = fsockopen($ssl.$par['host'], $par['port'], $errno, $errstr, 30);   
-			if(!$fp)return false;
-
-			fwrite($fp, $out);
-			if($exit)return;
-			$r = '';
-			while (!feof($fp)) {
-				$r .= fgets($fp, 128);
-			}
-			fclose($fp);
-			return $r;
-		}
-	}
-
-	function session(){
-		if(!isset($_SESSION)){
-			session_start();
-		}
-		switch(func_num_args()){
-			case 0:
-				return $_SESSION;
-			break;
-			case 1:
-				$k = func_get_arg(0);
-				if(is_array($k)){
-					foreach($k as $key => &$value){
-						$_SESSION[$key] = $value;	
-					}
-				}elseif(is_null($k)){
-					session_unset();
-					session_destroy();
-				}elseif(!empty($k)){
-					if($k === ':'){
-						$k = MODULE;
-					}elseif($k[0] === ':'){
-						$k = MODULE.'.'.substr($k,1);
-					}
-					$k = explode('.',$k);
-					$p = &$_SESSION;
-					for($i=0,$l=count($k);$i!=$l;++$i){
-						if(!is_array($p))return;
-						$p = &$p[$k[$i]];
-					}
-					return $p;
-				}
-			break;
-			case 2:
-				$k = func_get_arg(0);
-				$v = func_get_arg(1);
-				if(!empty($k)){
-					if($k === ':'){
-						$k = MODULE;
-					}elseif($k[0] === ':'){
-						$k = MODULE.'.'.substr($k,1);
-					}
-					$k = explode('.',$k);
-					$p = &$_SESSION;
-					for($i=0,$l=count($k);$i!=$l;++$i){
-						if(!is_array($p))$p=array();
-						$p = &$p[$k[$i]];
-					}
-					$p = $v;
-				}
-			break;
-		}
-	}
-
-	function cookie(){
-		switch(func_num_args()){
-			case 0:
-				return $_COOKIE;
-			break;
-			case 1:
-				$k = func_get_arg(0);
-				if(isset($_COOKIE[$k])){
-					return $_COOKIE[$k];
-				}elseif(is_null($k) || $k == ''){
-					foreach($_COOKIE as $key => &$value){
-						setcookie($key,null,null,'/');
-					}
-					$c = $_COOKIE;
-					$_COOKIE = array();
-					return $c;
-				}
-			break;
-			case 2:
-				$k = func_get_arg(0);
-				$v = func_get_arg(1);
-				if(!is_null($k)){
-					if(is_null($v) || $v == ''){
-						unset($_COOKIE[$k]);
-						setcookie($k,null,null,'/');
-					}else{
-						$_COOKIE[$k] = $v;
-						setcookie($k,$v,null,'/');		
-					}
-				}
-			break;
-			case 3:
-				$k = func_get_arg(0);
-				$v = func_get_arg(1);
-				$o = func_get_arg(2);
-				if(!is_null($k)){
-					if(is_null($v) || $v == ''){
-						unset($_COOKIE[$k]);
-						setcookie($k,null,null,'/');
-					}else{
-						$_COOKIE[$k] = $v;
-						if(is_numeric($o)){
-							setcookie($k,$v,$o,'/');
-						}elseif(is_array($o)){
-							setcookie(
-								$k,
-								$v,
-								!empty($o['expire']) && is_numeric($o['expire'])?$o['expire']:(time()+3600*24),
-								!empty($o['path'])?$o['path']:'/',
-								!empty($o['domain'])?$o['domain']:'',
-								!empty($o['secure'])?$o['secure']:''
-							);
-						}
-					}
-				}
-			break;
-		}
-	}
-
-	function F()
-	{
-		switch(func_num_args()){
-			case 1:
-				$p = func_get_arg(0);
-				if(!empty($p) && (is_file($p) || substr($p,0,4) == 'http'))return file_get_contents($p);
-			break;
-			case 2:
-				$p = func_get_arg(0);		
-				$v = func_get_arg(1);
-				if(!empty($p) && !empty($v)){
-					if(!is_string($v))$v = serialize($v);
-					if(!is_dir(dirname($p)))mkdir(dirname($p),0777,true);
-					return file_put_contents($p,$v);
-				}
-			break;
-		}
-	}
-
-	function I($_p){
-		if(is_array($_p)){
-			foreach($_p as &$v){
-				$v = I($v);
-			}
-		}else{
-			$tmp = explode('?',$_p,2);
-			$zz = isset($tmp[1])?$tmp[1]:null;
-			$tmp = explode('=',$tmp[0],2);
-			$def = isset($tmp[1])?$tmp[1]:null;
-			$tmp = explode('/',$tmp[0],2);
-			$type = isset($tmp[1])?$tmp[1]:null;
-			$a = explode('.',$tmp[0]);
-			$key = array_shift($a);
-			switch($key){
-				case 'get':
-					$p = &$_GET;
-				break;
-				case 'post':
-					$p = &$_POST;
-				break;
-				case 'files':
-					$p = &$_FILES;
-				break;
-				case 'request':
-					$p = &$_REQUEST;
-				break;
-				case 'session':
-					$p = &$_SESSION;
-				break;
-				case 'cookie':
-					$p = &$_COOKIE;
-				break;
-				case 'server':
-					$p = &$_SERVER;
-				break;
-				case 'globals':
-					$p = &$GLOBALS;
-				break;
-				default:
-					return;
-				break;
-			}
-			for($i=0,$l=count($a);$i!=$l;++$i){
-				if(!is_array($p)){
-					break;
-				}else{
-					$p = &$p[$a[$i]];
-				}
-			}
-			$_p = $p;
-			if(is_null($_p)){
-				if(is_null($def)){
-					exit('input error');
-				}else{
-					$_p = $def;
-				}
-			}elseif(!is_null($zz)){
-				if(1 !== preg_match($zz,(string)$_p)){
-					if(is_null($def)){
-						exit('input error');
-					}else{
-						$_p = $def;
-					}
-				}
-			}
-			switch($type){
-				case 'i':
-					$_p = (int)$_p;
-				break;
-				case 'f':
-					$_p = (float)$_p;
-				break;
-				case 'd':
-					$_p = (double)$_p;
-				break;
-				case 's':
-					$_p = htmlspecialchars($_p);
-				break;
-				case 'b':
-					$_p = (bool)$_p;
-				break;
-				case 'a':
-					$_p = (array)$_p;
-				break;
-				case 'o':
-					$_p = (object)$_p;
-				break;
-			}
-		}
-		return $_p;
-	}
-
-	function array_urlencode($d){
-		$_d = array();
-		foreach($d as $k=>$v)$_d[urlencode(str_replace(array('\\','"',"\r\n","\n","\r"),array('\\\\','\"','\r\n','\n','\r'),$k))] = is_array($v) ? array_urlencode($v) : urlencode(str_replace(array('\\','"',"\r\n","\n","\r"),array('\\\\','\"','\r\n','\n','\r'),$v));
-		return $_d;
-	}
-
-	function json($d,$is_obj = false){
-		//return urldecode(json_encode(array_urlencode($d),JSON_FORCE_OBJECT));
-		return json_encode($d,$is_obj?JSON_FORCE_OBJECT|JSON_UNESCAPED_UNICODE:JSON_UNESCAPED_UNICODE);
-	}
-
-
-	// 不区分大小写的in_array实现
-	function in_array_case($value,$array){
-		return in_array(strtolower($value),array_map('strtolower',$array));
-	}
-
-	function array_map_recursive($filter, $data) 
-	{
-		$result = array();
-		foreach ($data as $key => $val) 
-		{
-			$result[$key] = is_array($val)
-			 ? array_map_recursive($filter, $val)
-			 : call_user_func($filter, $val);
-		}
-		return $result;
-	}
-
-	/**
-	 * 判断是否SSL协议
-	 * @return boolean
-	 */
-	function is_ssl() {
-		if(isset($_SERVER['HTTPS']) && ('1' == $_SERVER['HTTPS'] || 'on' == strtolower($_SERVER['HTTPS']))){
-			return true;
-		}elseif(isset($_SERVER['SERVER_PORT']) && ('443' == $_SERVER['SERVER_PORT'] )) {
-			return true;
-		}
-		return false;
-	}
-
-	function _P($var){
-		P($var);
-		exit;
-	}
-
-	function _E($var){
-		E($var);
-		exit;
-	}
-
-	function _json($d){
-		exit(json($d));
-	}
-
-	function db(){
-		switch(func_num_args()){
-			case 0:
-				$id = 'default';
-				if(empty(Db::$_fn[$id])){
-					$dbarr = C('xaoi.database');
-					Db::$_fn[$id] = Db::connect($id,$dbarr[$id]);
-				}
-				$r_tab = '';
-			break;
-			case 1:
-				$r_tab = func_get_arg(0);
-				if($r_tab[0] === ':'){
-					$id = substr($r_tab,1);
-					$r_tab = '';
-				}else{
-					$id = 'default';
-				}
-				if(empty(Db::$_fn[$id])){
-					$dbarr = C('xaoi.database');
-					Db::$_fn[$id] = Db::connect($id,$dbarr[$id]);
-				}
-			break;
-			case 2:
-				$id = func_get_arg(0);
-				if(empty(Db::$_fn[$id])){
-					Db::$_fn[$id] = Db::connect($id,func_get_arg(1));
-				}
-				$r_tab = '';
-			break;
-		}
-		return empty($r_tab)?Db::$_fn[$id]:Db::$_fn[$id]($r_tab);
-	}
-
-	function _tpl($d = null,$f = ''){
-		$t = new Tpl($d);
-		$t->display($f);
-	}
-
-	function is_ajax($is = false){
-		if(is_referer($is) && !empty($_SERVER['HTTP_AJAX']) && $_SERVER['HTTP_AJAX'] === 'XAOI')return true;
-		if($is)exit;
-		return false;
-	}
-
-	function is_referer($is = false){
-		if(!empty($_SERVER['HTTP_REFERER'])){
-			$url = parse_url($_SERVER['HTTP_REFERER']);
-			if(!empty($url['host']) && in_array($url['host'], C('xaoi.sys.host')))return true;
-		}
-		if($is)exit;
-		return false;
-	}
-	
-	function ismobile(){
-		if (isset ($_SERVER['HTTP_X_WAP_PROFILE'])) return true; if(isset ($_SERVER['HTTP_CLIENT']) &&'PhoneClient'==$_SERVER['HTTP_CLIENT']) return true; if (isset ($_SERVER['HTTP_VIA'])) return stristr($_SERVER['HTTP_VIA'], 'wap') ? true : false; if (isset ($_SERVER['HTTP_USER_AGENT'])) { $clientkeywords = array( 'nokia','sony','ericsson','mot','samsung','htc','sgh','lg','sharp','sie-','philips','panasonic','alcatel','lenovo','iphone','ipod','blackberry','meizu','android','netfront','symbian','ucweb','windowsce','palm','operamini','operamobi','openwave','nexusone','cldc','midp','wap','mobile' ); if (preg_match("/(" . implode('|', $clientkeywords) . ")/i", strtolower($_SERVER['HTTP_USER_AGENT']))) { return true; } } if (isset ($_SERVER['HTTP_ACCEPT'])) { if ((strpos($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml') !== false) && (strpos($_SERVER['HTTP_ACCEPT'], 'text/html') === false || (strpos($_SERVER['HTTP_ACCEPT'], 'vnd.wap.wml') < strpos($_SERVER['HTTP_ACCEPT'], 'text/html')))) { return true; } } return false;
-	}
-
+// 数据库
 class Db{
 	static public $_fn = [];
 	static private $conn = [];
@@ -1505,6 +1411,7 @@ class Db{
 		}
 }
 
+// 模板引擎
 class Tpl{
 	private $_include = array();
 	private $_include_js = array();
