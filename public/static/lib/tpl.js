@@ -1,0 +1,1 @@
+GLOBAL.include=function(a){a=a.split("/");this.tpl[a[0]][a[1]][a[2]](function(b){document.write(b)},function(){try{return GLOBAL.data||{}}catch(b){return{}}}(),function(){try{return GLOBAL.data[a[0]]||{}}catch(b){return{}}}(),function(){try{return GLOBAL.data[a[0]][a[1]]||{}}catch(b){return{}}}(),function(){try{return GLOBAL.data[a[0]][a[1]][a[2]]||{}}catch(b){return{}}}())};
