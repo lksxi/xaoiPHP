@@ -1545,7 +1545,7 @@ class Tpl{
 			);
 			$str = $this->compile($path);
 			$_d[1] = $this->_include_js;
-			$str = '<?php // '.serialize(array($this->_include,$this->_include_js))."\n".'return function(){extract(func_get_arg(0),EXTR_PREFIX_SAME,"D");?>'.$str.'<?php };?>';
+			$str = '<?php //'.serialize(array($this->_include,$this->_include_js))."\n".'return function(){extract(func_get_arg(0),EXTR_PREFIX_SAME,"D");?>'.$str.'<?php };?>';
 			$this->F($cache,$str);
 		}
 
